@@ -1,0 +1,110 @@
+name: Next.js CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - feature
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Install dependencies
+        run: npm install
+      - name: Run tests
+        run: npm test
+      - name: Build the project
+        run: npm run build
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: website
+          path: '.next/**/*'
+
+  # scan:
+  #   needs: build
+  #   runs-on: ubuntu-latest
+  #   outputs:
+  #     scan_success: ${{ steps.set-scan-result.outputs.scan_success }}
+  #   if: github.ref == 'refs/heads/feature'
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - name: Download Artifact
+  #       uses: actions/download-artifact@v4
+  #       with:
+  #         name: website
+  #         path: '.next/**/*'
+  #     - name: Clear SonarScanner cache
+  #       run: rm -rf /opt/sonar-scanner/.sonar/cache
+  #     - name: SonarQube Scan with Debug Logging
+  #       uses: sonarsource/sonarqube-scan-action@master
+  #       env:
+  #         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+  #         SONAR_HOST_URL: "https://872f6e251bea73c912c0ee14aff5aa62.serveo.net"
+  #     - name: Set scan result and check status
+  #       id: set-scan-result
+  #       run: |
+  #         if [ $? -eq 0 ]; then
+  #           echo "::set-output name=scan_success::true"
+  #         else
+  #           echo "::set-output name=scan_success::false"
+  #           exit 1
+  #         fi
+  #     - name: Print scan result
+  #       run: echo "Scan success:" ${{ steps.set-scan-result.outputs.scan_success }}
+
+  merge-to-dev:
+    # needs: scan
+    # Will uncomment when using sonarqube
+    runs-on: ubuntu-latest
+    # if: needs.scan.outputs.scan_success == 'true'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0  # Fetch all history for all branches and tags
+          ref: dev  # Ensure we are on the dev branch
+          
+      - name: Set up Git credentials
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          
+          # Temporarily set remote URL to include access token
+          ORIGIN_URL=$(git config --get remote.origin.url)
+          NEW_URL=$(echo "$ORIGIN_URL" | sed "s|https://|https://${{ secrets.GITHUB_TOKEN }}@|")
+          git config remote.origin.url "$NEW_URL"
+
+      - name: Fetch all branches
+        run: git fetch --all
+
+      - name: Merge feature branch into dev
+        run: git merge origin/feature  # Merge feature into currently checked out dev branch
+
+      - name: Push changes to dev branch
+        run: git push origin dev
+
+      - name: Reset remote URL
+        run: |
+          # Reset the remote URL
+          ORIGIN_URL=$(git config --get remote.origin.url)
+          NEW_URL=$(echo "$ORIGIN_URL" | sed "s|https://${{ secrets.GITHUB_TOKEN }}@|https://|")
+          git config remote.origin.url "$NEW_URL"
+
+  pull-request-to-main:
+    needs: merge-to-dev
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check GitHub Ref
+        run: echo "Current GitHub Ref:" ${{ github.ref }}
+      - name: Create pull request from dev to main using REST API
+        run: |
+          curl -X POST -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+          -H "Accept: application/vnd.github.v3+json" \
+          https://api.github.com/repos/${{ github.repository }}/pulls \
+          -d '{"title": "Merge dev branch into main", "head": "dev", "base": "main"}'
