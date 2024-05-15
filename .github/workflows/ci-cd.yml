@@ -16,6 +16,8 @@ jobs:
           node-version: '20'
       - name: Install dependencies
         run: npm install
+      - name: Install Jest and testing libraries
+        run: npm install --save-dev jest @testing-library/react @testing-library/jest-dom
       - name: Run tests
         run: npm test
       - name: Build the project
@@ -25,7 +27,8 @@ jobs:
         with:
           name: website
           path: '.next/**/*'
-  #Uncomment when we have SonarQube server
+  
+  # Uncomment when we have SonarQube server
   # scan:
   #   needs: build
   #   runs-on: ubuntu-latest
@@ -59,10 +62,9 @@ jobs:
   #       run: echo "Scan success:" ${{ steps.set-scan-result.outputs.scan_success }}
 
   merge-to-dev:
-    # needs: scan   #Uncomment when we have SonarQube server and change the needs from 'build' to 'scan' again
-    needs: build
+    needs: build   # This ensures merge-to-dev waits for the build job to complete
     runs-on: ubuntu-latest
-    # if: needs.scan.outputs.scan_success == 'true'  #Uncomment when we have SonarQube server
+    # if: needs.scan.outputs.scan_success == 'true'  # Uncomment when we have SonarQube server
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -93,7 +95,7 @@ jobs:
         run: |
           # Reset the remote URL
           ORIGIN_URL=$(git config --get remote.origin.url)
-          NEW_URL=$(echo "$ORIGIN_URL" | sed "s|https://${{ secrets.GITHUB_TOKEN }}@|https://|")
+          NEW_URL=$(echo "$NEW_URL" | sed "s|https://${{ secrets.GITHUB_TOKEN }}@|https://|")
           git config remote.origin.url "$NEW_URL"
 
   pull-request-to-main:
@@ -104,4 +106,7 @@ jobs:
         run: echo "Current GitHub Ref:" ${{ github.ref }}
       - name: Create pull request from dev to main using REST API
         run: |
-          curl -X POST -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}"           -H "Accept: application/vnd.github.v3+json"           https://api.github.com/repos/${{ github.repository }}/pulls           -d '{"title": "Merge dev branch into main", "head": "dev", "base": "main"}'
+          curl -X POST -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+          -H "Accept: application/vnd.github.v3+json" \
+          https://api.github.com/repos/${{ github.repository }}/pulls \
+          -d '{"title": "Merge dev branch into main", "head": "dev", "base": "main"}'
