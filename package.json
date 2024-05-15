@@ -1,5 +1,5 @@
 {
-  "name": "aws-amplify-gen2",
+  "name": "simple-nextjs-app",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -9,18 +9,13 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@aws-amplify/ui-react": "^6.1.9",
-    "aws-amplify": "^6.2.0",
-    "next": "13.5.4",
-    "react": "^18",
-    "react-dom": "^18"
+    "next": "^12.3.4",
+    "react": "^17.0.2",
+    "react-dom": "^17.0.2"
   },
   "devDependencies": {
-    "@aws-amplify/backend": "^1.0.0",
-    "@aws-amplify/backend-cli": "^1.0.1",
-    "@types/node": "^20",
-    "@types/react": "^18",
-    "@types/react-dom": "^18",
-    "typescript": "^5.3.2"
+    "typescript": "^4.5.4",
+    "@types/react": "^17.0.2",
+    "@types/node": "^17.0.2"
   }
 }
