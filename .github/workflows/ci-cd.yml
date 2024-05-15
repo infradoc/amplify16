@@ -25,7 +25,7 @@ jobs:
         with:
           name: website
           path: '.next/**/*'
-
+  #Uncomment when we have SonarQube server
   # scan:
   #   needs: build
   #   runs-on: ubuntu-latest
@@ -59,10 +59,10 @@ jobs:
   #       run: echo "Scan success:" ${{ steps.set-scan-result.outputs.scan_success }}
 
   merge-to-dev:
-    # needs: scan
-    # Will uncomment when using sonarqube
+    # needs: scan   #Uncomment when we have SonarQube server and change the needs from 'build' to 'scan' again
+    needs: build
     runs-on: ubuntu-latest
-    # if: needs.scan.outputs.scan_success == 'true'
+    # if: needs.scan.outputs.scan_success == 'true'  #Uncomment when we have SonarQube server
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -104,7 +104,4 @@ jobs:
         run: echo "Current GitHub Ref:" ${{ github.ref }}
       - name: Create pull request from dev to main using REST API
         run: |
-          curl -X POST -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-          -H "Accept: application/vnd.github.v3+json" \
-          https://api.github.com/repos/${{ github.repository }}/pulls \
-          -d '{"title": "Merge dev branch into main", "head": "dev", "base": "main"}'
+          curl -X POST -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}"           -H "Accept: application/vnd.github.v3+json"           https://api.github.com/repos/${{ github.repository }}/pulls           -d '{"title": "Merge dev branch into main", "head": "dev", "base": "main"}'
