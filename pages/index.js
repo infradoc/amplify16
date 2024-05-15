@@ -1,7 +1,7 @@
 const Home = () => {
   return (
     <div>
-      <h1>Welcome to Next.js!</h1>
+      <h1>This is the Next.js poc app!</h1>
     </div>
   );
 };
