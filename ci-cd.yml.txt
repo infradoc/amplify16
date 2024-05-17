@@ -1,3 +1,4 @@
+
 name: Next.js CI/CD Pipeline
 
 on:
@@ -26,45 +27,46 @@ jobs:
           name: website
           path: '.next/**/*'
   
-  scan:
-    needs: build
-    runs-on: ubuntu-latest
-    outputs:
-      scan_success: ${{ steps.set-scan-result.outputs.scan_success }}
-    if: github.ref == 'refs/heads/feature'
-    steps:
-      - uses: actions/checkout@v4
-      - name: Download Artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: website
-          path: '.next/**/*'
-      - name: Clear SonarScanner cache
-        run: rm -rf /opt/sonar-scanner/.sonar/cache
-      - name: SonarQube Scan with Debug Logging
-        uses: sonarsource/sonarqube-scan-action@master
-        env:
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          SONAR_HOST_URL: "https://b928fba93fcdf4e6ffb768832ec811a4.serveo.net"
-      - name: Set scan result and check status
-        id: set-scan-result
-        run: |
-          if [ $? -eq 0 ]; then
-            echo "::set-output name=scan_success::true"
-          else
-            echo "::set-output name=scan_success::false"
-            exit 1
-          fi
-      - name: Print scan result
-        run: echo "Scan success:" ${{ steps.set-scan-result.outputs.scan_success }}
+  # Uncomment when we have SonarQube server
+  # scan:
+  #   needs: build
+  #   runs-on: ubuntu-latest
+  #   outputs:
+  #     scan_success: ${{ steps.set-scan-result.outputs.scan_success }}
+  #   if: github.ref == 'refs/heads/feature'
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - name: Download Artifact
+  #       uses: actions/download-artifact@v4
+  #       with:
+  #         name: website
+  #         path: '.next/**/*'
+  #     - name: Clear SonarScanner cache
+  #       run: rm -rf /opt/sonar-scanner/.sonar/cache
+  #     - name: SonarQube Scan with Debug Logging
+  #       uses: sonarsource/sonarqube-scan-action@master
+  #       env:
+  #         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+  #         SONAR_HOST_URL: "https://b928fba93fcdf4e6ffb768832ec811a4.serveo.net"
+  #     - name: Set scan result and check status
+  #       id: set-scan-result
+  #       run: |
+  #         if [ $? -eq 0 ]; then
+  #           echo "::set-output name=scan_success::true"
+  #         else
+  #           echo "::set-output name=scan_success::false"
+  #           exit 1
+  #         fi
+  #     - name: Print scan result
+  #       run: echo "Scan success:" ${{ steps.set-scan-result.outputs.scan_success }}
 
   merge-to-dev:
-    needs: scan
+    needs: build   # This ensures merge-to-dev waits for the build job to complete
     runs-on: ubuntu-latest
-    if: needs.scan.outputs.scan_success == 'true'
+    # if: needs.scan.outputs.scan_success == 'true'  # Uncomment when we have SonarQube server
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v2
         with:
           fetch-depth: 0  # Fetch all history for all branches and tags
           ref: dev  # Ensure we are on the dev branch
