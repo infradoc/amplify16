@@ -45,7 +45,7 @@ jobs:
         uses: sonarsource/sonarqube-scan-action@master
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-          SONAR_HOST_URL: "https://b928fba93fcdf4e6ffb768832ec811a4.serveo.net"
+          SONAR_HOST_URL: "http://b928fba93fcdf4e6ffb768832ec811a4.serveo.net"
       - name: Set scan result and check status
         id: set-scan-result
         run: |
